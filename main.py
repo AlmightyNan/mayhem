@@ -834,7 +834,9 @@ def display_results_window(result):
     text_widget.insert("end", f"College Name: {result['College Name']}\n", "bold")
     text_widget.insert("end", f"Genders Accepted: {result['Genders Accepted']}\n")
     text_widget.insert("end", f"Campus Size: {result['Campus Size']}\n")
-    text_widget.insert("end", f"Total Student Enrollments: {result['Total Student Enrollments']}\n")
+    text_widget.insert(
+        "end", f"Total Student Enrollments: {result['Total Student Enrollments']}\n"
+    )
     text_widget.insert("end", f"Total Faculty: {result['Total Faculty']}\n")
     text_widget.insert("end", f"Established Year: {result['Established Year']}\n")
     text_widget.insert("end", f"Rating: {result['Rating']}\n")
@@ -853,6 +855,7 @@ def display_results_window(result):
     text_widget.insert("end", f"Average Fees: {result['Average Fees']}\n")
 
     text_widget.configure(state="disabled")
+
 
 def exit_application():
     root.destroy()
