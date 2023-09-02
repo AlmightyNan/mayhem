@@ -67,7 +67,7 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Mohali',['Date & Year','Venue','Opponent','Result']])
         if b==6:
-            print('Mathches Held In Hyderabad Are ')
+            print('Matches Held In Hyderabad Are ')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Hyderabad',['Date & Year','Venue','Opponent','Result']])
         if b==7:
@@ -75,11 +75,11 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Kolkata',['Date & Year','Venue','Opponent','Result']])
         if b==8:
-            print('Mathches Held In Ahmedabad Are ')
+            print('Matches Held In Ahmedabad Are ')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Ahmedabad',['Date & Year','Venue','Opponent','Result']])
         if b==9:
-            print('Mathches Held In Nagpur Are ')
+            print('Matches Held In Nagpur Are ')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Nagpur',['Date & Year','Venue','Opponent','Result']])
         if b==10:
@@ -87,7 +87,7 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Kochi',['Date & Year','Venue','Opponent','Result']])
         if b==11:
-            print('Mathches Held In Dharamsala Are ')
+            print('Matches Held In Dharamsala Are ')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Venue']=='Dharamsala',['Date & Year','Venue','Opponent','Result']])
         if b==12:
@@ -124,7 +124,7 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Kolkata Knight Riders',['Date & Year','Opponent','Result']])
         if c==4:
-            print('Mathches Vs Royal Challangers Bangalore')
+            print('Matches Vs Royal Challangers Bangalore')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Royal Challangers Bangalore',['Date & Year','Opponent','Result']])
         if c==5:
@@ -144,7 +144,7 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Pune Warriors India',['Date & Year','Opponent','Result']])
         if c==9:
-            print('Mathches Vs Kochi Tuskers Kerala')
+            print('Matches Vs Kochi Tuskers Kerala')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Kochi Tuskers Kerala',['Date & Year','Opponent','Result']])
         if c==10:
@@ -152,7 +152,7 @@ if e==1:
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Sunrises Hyderabad',['Date & Year','Opponent','Result']])
         if c==11:
-            print('Mathches Vs Delhi Capitals')
+            print('Matches Vs Delhi Capitals')
             pd.set_option('display.max_rows',None)
             print(d.loc[d['Opponent']=='Delhi Capitals',['Date & Year','Opponent','Result']])
         if c==12:
