@@ -2,4 +2,5 @@ pandas
 numpy
 prettytable
 unidecode
-mysql.connector
+mysql-connector-python
+windows-curses

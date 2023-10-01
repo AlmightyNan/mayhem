@@ -4,12 +4,6 @@ import matplotlib.pyplot as plt
 import random as rd
 
 s=pd.read_csv('stock analysis.csv')
-s.index = ["Reliance Industries"," Tata Steel", "Tata Mortors", "HFCL", "ITC", "Adani Power", "NIFTY", "Apollo Micro Systems Ltd",
-         "Reliance BP Mobility Ltd", "DJI"," Google", "Microsoft", "Apple", "Tesla", "SpaceX", "Bayerische Motoren Werke AG",
-         "Mercedes Benz Group AG", "Adidas AG", "Vedanta Ltd", "Alembic Ltd", "Meta Platforms Inc", "Infosys Ltd", "IBM Common Stock",
-        "Tata Consultancy Services Ltd","Hindustan Unilever Ltd", "Aditya Birla Money Ltd", "Aditya Birla Capital Ltd", "Sony Group Corp",
-       "Maruti Suzuki India Ltd", "Hero Motocorp Ltd"]
-
 pd.set_option('display.max_columns',None)
 j=input('Enter (YES|NO) To Analyse the Data:')
 while True:
