@@ -4,14 +4,39 @@ import re  # For regular expressions
 from prettytable import PrettyTable
 from math import *
 import matplotlib.pyplot as plt  # Import matplotlib for plotting
-import numpy as np 
+import numpy as np
+import csv
+import logging
+import easygui
+
+
+def logging_events():
+    # Configure the logging module to write logs to a file
+    logging.basicConfig(filename="app.log", level=logging.INFO)
+
+    # Log an informational message
+    logging.info("Application started")
+
+
+def export_data_to_csv(df):
+    file_path = easygui.filesavebox(default=".csv", filetypes=["*.csv"])
+
+    if file_path:
+        try:
+            df.to_csv(file_path, index=False)
+            logging.info(f"Data exported to {file_path}")
+            print(f"Data exported to {file_path}")
+        except Exception as e:
+            logging.error(f"Error exporting data to CSV: {e}", exc_info=True)
+            print(f"Error exporting data to CSV: {e}")
+
 
 def load_data(file_path):
     try:
         # Define a custom function to handle the mixed data types
         def custom_converter(value):
             # Remove commas and quotation marks from numeric values
-            value = re.sub(r'[,"]', '', str(value))
+            value = re.sub(r'[,"]', "", str(value))
             try:
                 # Try converting the cleaned value to a float
                 return float(value)
@@ -20,11 +45,19 @@ def load_data(file_path):
                 return str(value)
 
         # Use the custom converter when reading the CSV
-        df = pd.read_csv(file_path, converters={"Open": custom_converter, "High": custom_converter, "Low": custom_converter})
+        df = pd.read_csv(
+            file_path,
+            converters={
+                "Open": custom_converter,
+                "High": custom_converter,
+                "Low": custom_converter,
+            },
+        )
         return df
     except Exception as e:
         print(f"Error loading data: {e}")
         return None
+
 
 def display_centered_text(stdscr, text):
     height, width = stdscr.getmaxyx()
@@ -41,16 +74,24 @@ def plot_data(statistics):
 
     # Create a horizontal bar chart
     plt.figure(figsize=(10, 6))
-    bars = plt.barh(labels, values, color='skyblue')
+    bars = plt.barh(labels, values, color="skyblue")
     plt.xlabel("Values")
     plt.title("Statistics Horizontal Bar Chart")
-    plt.grid(axis='x', linestyle='--', alpha=0.6)
+    plt.grid(axis="x", linestyle="--", alpha=0.6)
 
     # Annotate the bars with their values on the right side of the bars
     for label, value in zip(labels, values):
         if np.isfinite(value):
-            plt.text(value, label, f'{value:.2f}', va='center', color='black', fontweight='bold', fontsize=10,
-                     ha='left' if value < 0 else 'right')
+            plt.text(
+                value,
+                label,
+                f"{value:.2f}",
+                va="center",
+                color="black",
+                fontweight="bold",
+                fontsize=10,
+                ha="left" if value < 0 else "right",
+            )
 
     # Set custom x-axis ticks
     max_x = 36000
@@ -59,7 +100,9 @@ def plot_data(statistics):
     plt.tight_layout()
     plt.show()
 
+
 def main(stdscr):
+    logging_events()
     curses.curs_set(0)
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
@@ -69,35 +112,46 @@ def main(stdscr):
     if df is None:
         return
 
-    options = ["Analyze Open Column", "Analyze High Column", "Analyze Low Column", "Quit"]
+    options = [
+        "Analyze Open Column",
+        "Analyze High Column",
+        "Analyze Low Column",
+        "Export Data as CSV",
+        "Quit",
+    ]
     current_option = 0  # Initialize the current option
 
     while True:
         stdscr.clear()
         height, width = stdscr.getmaxyx()
 
-        for i, option in enumerate(options):
-            x = (width - len(option)) // 2
-            y = height // 2 - len(options) + i
+        try:
+            for i, option in enumerate(options):
+                x = (width - len(option)) // 2
+                y = height // 2 - len(options) + i
 
-            if i == current_option:
-                stdscr.addstr(y, x, option, curses.color_pair(1))
-            else:
-                stdscr.addstr(y, x, option)
+                if i == current_option:
+                    stdscr.addstr(y, x, f"> {option} <", curses.color_pair(1))
+                else:
+                    stdscr.addstr(y, x, f"  {option}  ")
 
-        stdscr.refresh()
-        key = stdscr.getch()
+            stdscr.refresh()
+            key = stdscr.getch()
 
-        if key == curses.KEY_UP and current_option > 0:
-            current_option -= 1
-        elif key == curses.KEY_DOWN and current_option < len(options) - 1:
-            current_option += 1
-        elif key == 10:  # Enter key
-            if current_option == len(options) - 1:
-                break  # Quit the program
-            else:
-                column_name = options[current_option].split()[-2]
-                analyze_column_stats(stdscr, df, column_name)
+            if key == curses.KEY_UP and current_option > 0:
+                current_option -= 1
+            elif key == curses.KEY_DOWN and current_option < len(options) - 1:
+                current_option += 1
+            elif key == 10:  # Enter key
+                if current_option == len(options) - 1:
+                    break  # Quit the program
+                elif current_option == len(options) - 2:  # "Export Data as CSV" option
+                    export_data_to_csv(df)
+                else:
+                    column_name = options[current_option].split()[-2]
+                    analyze_column_stats(stdscr, df, column_name)
+        except Exception as e:
+            logging.error(f"Error loading data: {e}", exc_info=True)
 
 
 # Modify the analyze_column_stats function to center-align the response
@@ -132,7 +186,7 @@ def analyze_column_stats(stdscr, df, column_name):
         mode = column.mode().values[0]
         range_value = max_value - min_value
         coef_variation = (std_dev / mean) * 100
-        sem = std_dev / (count ** 0.5)
+        sem = std_dev / (count**0.5)
         mad = (column - median).abs().mean()
         cv = (mad / mean) * 100
         sum_of_squares = (column - mean).pow(2).sum()
@@ -148,7 +202,6 @@ def analyze_column_stats(stdscr, df, column_name):
         max_neg = column.where(lambda x: x < 0).max()
         skew_abs = column.abs().skew()
         kurt_abs = column.abs().kurt()
-
 
         # Create a PrettyTable
         table = PrettyTable()
@@ -210,7 +263,7 @@ def analyze_column_stats(stdscr, df, column_name):
             "Min (Negative)": min_neg,
             "Max (Negative)": max_neg,
             "Skewness (Absolute)": skew_abs,
-            "Kurtosis (Absolute)": kurt_abs
+            "Kurtosis (Absolute)": kurt_abs,
         }
 
         # Call the plot_data function with the statistics dictionary
@@ -218,34 +271,50 @@ def analyze_column_stats(stdscr, df, column_name):
         table_text = table.get_string()
 
         # Calculate the starting y-coordinate for vertical centering
-        y = (height - table.get_string().count('\n')) // 2
+        y = (height - table.get_string().count("\n")) // 2
 
         # Calculate the starting x-coordinate for horizontal centering
-        x = (width - max(len(line) for line in table_text.split('\n'))) // 2
+        x = (width - max(len(line) for line in table_text.split("\n"))) // 2
 
         while True:
             stdscr.clear()
-            for i, line in enumerate(table_text.split('\n')):
+            for i, line in enumerate(table_text.split("\n")):
                 stdscr.addstr(y + i, x, line)
 
             header_text = f"Analyzing {column_name} Column"
-            footer_text = f"Press 'q' and enter to exit this view and return back to menu."
-            stdscr.addstr(0, (width - len(header_text)) // 2, header_text, curses.A_BOLD)
-            
-            footer_text = "Press 'q' and enter to exit this view and return back to menu."
-            stdscr.addstr(height - 2, (width - len(footer_text)) // 2, footer_text, curses.color_pair(1))  # Red color
+            footer_text = (
+                f"Press 'q' and enter to exit this view and return back to menu."
+            )
+            stdscr.addstr(
+                0, (width - len(header_text)) // 2, header_text, curses.A_BOLD
+            )
+
+            footer_text = (
+                "Press 'q' and enter to exit this view and return back to menu."
+            )
+            stdscr.addstr(
+                height - 2,
+                (width - len(footer_text)) // 2,
+                footer_text,
+                curses.color_pair(1),
+            )  # Red color
 
             stdscr.refresh()
 
             key = stdscr.getch()
-            if key == ord('q'):
+            if key == ord("q"):
                 break
 
         # Calculate the starting y-coordinate for the plot prompt at the footer
         plot_prompt_y = height - 2
 
         plot_prompt = "Do you want to plot this data? (yes/no): "
-        stdscr.addstr(plot_prompt_y, (width - len(plot_prompt)) // 2, plot_prompt, curses.color_pair(1))  # Red color
+        stdscr.addstr(
+            plot_prompt_y,
+            (width - len(plot_prompt)) // 2,
+            plot_prompt,
+            curses.color_pair(1),
+        )  # Red color
         stdscr.refresh()
 
         # Capture user input for plotting
@@ -256,7 +325,12 @@ def analyze_column_stats(stdscr, df, column_name):
         stdscr.addstr(height - 2, 0, " " * width)
 
         plot_prompt = "Do you want to plot this data? (yes/no): "
-        stdscr.addstr(plot_prompt_y, (width - len(plot_prompt)) // 2, plot_prompt, curses.color_pair(1))  # Red color
+        stdscr.addstr(
+            plot_prompt_y,
+            (width - len(plot_prompt)) // 2,
+            plot_prompt,
+            curses.color_pair(1),
+        )  # Red color
         stdscr.refresh()
 
         # Capture user input for plotting
@@ -269,9 +343,11 @@ def analyze_column_stats(stdscr, df, column_name):
                 break
             elif key == 127:  # Backspace key
                 user_input = user_input[:-1]
-            elif key == ord('q'):  # If 'q' is typed, clear the line and ask again
+            elif key == ord("q"):  # If 'q' is typed, clear the line and ask again
                 user_input = ""
-                stdscr.addstr(input_y, input_x, " " * (width - input_x))  # Clear the line
+                stdscr.addstr(
+                    input_y, input_x, " " * (width - input_x)
+                )  # Clear the line
             else:
                 user_input += chr(key)
 
@@ -281,12 +357,16 @@ def analyze_column_stats(stdscr, df, column_name):
             if user_input.lower() == "yes":
                 plot_data(statistics_dict)
                 # After the graph is closed, clear the plot_prompt line and display it again
-                stdscr.addstr(input_y, input_x, " " * (width - input_x))  # Clear the line
+                stdscr.addstr(
+                    input_y, input_x, " " * (width - input_x)
+                )  # Clear the line
             elif user_input.lower() == "no":
                 break
 
     stdscr.refresh()
     stdscr.getch()
 
+
 if __name__ == "__main__":
+    logging_events()
     curses.wrapper(main)
