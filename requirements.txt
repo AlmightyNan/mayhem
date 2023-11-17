@@ -1,6 +1,6 @@
 pandas
 numpy
+matplotlib
 prettytable
 unidecode
 mysql-connector-python
-windows-curses
