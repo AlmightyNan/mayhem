@@ -4,3 +4,4 @@ matplotlib
 prettytable
 unidecode
 mysql-connector-python
+sqlalchemy

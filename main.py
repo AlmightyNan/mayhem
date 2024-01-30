@@ -1,4 +1,5 @@
 import mysql.connector as msc
+import numpy as np
 import connectors.config as config
 from prettytable import PrettyTable
 from src.utils import CustomLogger as logger
@@ -16,7 +17,7 @@ from tkinter import ttk, font
 import matplotlib.pyplot as plt
 from tkinter import filedialog
 from sqlalchemy import create_engine
-
+import math
 
 def center_window(window):
     window.update_idletasks()  # Make sure window size is updated
@@ -59,6 +60,7 @@ def go_back_to_main_menu():
     option2.pack_forget()
     option3.pack_forget()
     option4.pack_forget()
+    option5.pack_forget()
     # credits_button.pack_forget()
     return_to_main_menu.pack_forget()
     enter_button.pack(side=tk.LEFT, padx=10)
@@ -317,18 +319,22 @@ def search_and_compare():
 
 
 def search_dataset():
+    """
+    Function to search the dataset and display options for further actions.
+    """
     center_window(root)
     title_label.config(
         text="Please make a selection to proceed.", font=("Montserrat", 16, "bold")
     )
     enter_button.pack_forget()
     label.config(
-        text="Option 1 - View top x and bottom y rows.\nOption 2 - Export certain rows from dataset.\nOption 3 - Compare data between 2 colleges.\nOption 4 - View a brief info about a college",
+        text="Option 1 - View top x and bottom y rows.\nOption 2 - Export certain rows from dataset.\nOption 3 - Compare data between 2 colleges.\nOption 4 - View a brief info about a college\nOption 5 - Display college ratings.",
     )
     option1.pack(side=tk.LEFT, padx=10)
     option2.pack(side=tk.LEFT, padx=10)
     option3.pack(side=tk.LEFT, padx=10)
     option4.pack(side=tk.LEFT, padx=10)
+    option5.pack(side=tk.LEFT, padx=10)
     credits_button.pack_forget()
     view_all_data.pack_forget()
     return_to_main_menu.pack(side=tk.LEFT, padx=10)
@@ -821,41 +827,207 @@ def search_college():
             messagebox.showinfo("No Results", "No matching data found.")
 
 
-def display_results_window(result):
-    results_window = tk.Toplevel()
-    results_window.title("Search Results")
-    results_window.geometry("1100x900")
-    center_window(results_window)
-    text_widget = tk.Text(results_window, font=("Montserrat", 14))
-    text_widget.pack(fill="both", expand=True)
+def calculate_rating(established_year, total_student_enrollments, total_faculty, average_fees):
+    # Convert established_year to integer if it's not NaN and not 'Established Year'
+    if established_year != 'Established Year' and not pd.isnull(established_year):
+        established_year = int(established_year)
+    else:
+        established_year = 0
+    
+    # Convert other values to integers or floats if they are not NaN
+    try:
+        total_faculty = int(total_faculty) if not pd.isnull(total_faculty) else 0
+        total_student_enrollments = int(total_student_enrollments) if not pd.isnull(total_student_enrollments) else 0
+        average_fees = float(average_fees) if not pd.isnull(average_fees) else 0
+    except ValueError:
+        total_faculty = 0
+        total_student_enrollments = 0
+        average_fees = 0
+    
+    # Weightage factors for each criterion
+    established_year_weight = 0.2
+    student_faculty_ratio_weight = 0.3
+    average_fees_weight = 0.3
+    campus_size_weight = 0.2
 
-    text_widget.tag_configure("bold", font=("Montserrat", 18, "bold"))
+    # Adjust established year to give more weightage to older colleges
+    adjusted_established_year = max(established_year - 1900, 0)
 
-    text_widget.insert("end", f"College Name: {result['College Name']}\n", "bold")
-    text_widget.insert("end", f"Genders Accepted: {result['Genders Accepted']}\n")
-    text_widget.insert("end", f"Campus Size: {result['Campus Size']}\n")
-    text_widget.insert(
-        "end", f"Total Student Enrollments: {result['Total Student Enrollments']}\n"
+    # Calculate rating based on weighted factors
+    try:
+        rating = (
+            (adjusted_established_year * established_year_weight) +
+            ((total_faculty / total_student_enrollments) * student_faculty_ratio_weight) +
+            ((1 / average_fees) * average_fees_weight) +
+            (campus_size_weight / np.sqrt(total_student_enrollments))  # Adjust for campus size
+        )
+    except ZeroDivisionError:
+        rating = 0  # Handle division by zero
+    
+    # Scale rating between 0 and 5
+    scaled_rating = min(max(rating / 5, 0), 5)
+    
+    return f"{scaled_rating:.2f}/5"
+
+def open_college_ratings_window():
+    # Create a new window for displaying college ratings
+    ratings_window = tk.Toplevel(root)
+    ratings_window.title("College Ratings")
+    
+    # Create a DataFrame to hold the data
+    data = pd.read_csv("./datasets/colleges.csv")
+    
+    # Calculate ratings for each college
+    data['Rating'] = data.apply(lambda row: calculate_rating(row['Established Year'], row['Total Student Enrollments'], row['Total Faculty'], row['Average Fees']), axis=1)
+    
+    # Default sorting by rating in ascending order
+    data = data.sort_values(by='Rating', ascending=True)
+    
+    # Create a frame for displaying the treeview and sorting options
+    frame = tk.Frame(ratings_window)
+    frame.pack(padx=10, pady=10, fill='both', expand=True)
+    
+    # Create a treeview to display the college data
+    tree = ttk.Treeview(frame, columns=['College Name', 'Rating', 'Established Year', 'Average Fees'], show='headings')
+    tree.heading('College Name', text='College Name')
+    tree.heading('Rating', text='Rating')
+    tree.heading('Established Year', text='Established Year')
+    tree.heading('Average Fees', text='Average Fees')
+    
+    # Populate the treeview with data
+    for index, row in data.iterrows():
+        tree.insert('', 'end', values=(row['College Name'], row['Rating'], row['Established Year'], row['Average Fees']))
+    
+    tree.pack(fill='both', expand=True)
+    
+    # Add padding between the treeview and the dropdown menu
+    padding = tk.Label(frame, text="", pady=10)
+    padding.pack()
+    
+    # Function to handle sorting by rating
+    def sort_by_rating(order):
+        data_sorted = data.sort_values(by='Rating', ascending=(order == 'asc'))
+        update_treeview(tree, data_sorted)
+    
+    # Create a StringVar to track the selected sorting option
+    sort_option = tk.StringVar(ratings_window)
+    
+    # Function to handle selection in the dropdown menu
+    def on_sort_option_change(*args):
+        selected_option = sort_option.get()
+        if selected_option != 'Sort By':
+            if selected_option == 'High to Low':
+                sort_by_rating('desc')
+            elif selected_option == 'Low to High':
+                sort_by_rating('asc')
+    
+    # Link the dropdown variable to the callback function
+    sort_option.trace('w', on_sort_option_change)
+    
+    # Create the dropdown menu
+    sort_options = ['Sort By', 'High to Low', 'Low to High']
+    sort_option.set(sort_options[0])  # Set the default option to "Sort By"
+    sort_menu = tk.OptionMenu(frame, sort_option, *sort_options)
+    sort_menu.pack(pady=(0, 10))
+    
+    # Display the ratings window
+    ratings_window.mainloop()
+
+def update_treeview(tree, data):
+    # Clear existing items
+    for item in tree.get_children():
+        tree.delete(item)
+    
+    # Populate the treeview with sorted data
+    for index, row in data.iterrows():
+        tree.insert('', 'end', values=(row['College Name'], row['Rating'], row['Established Year'], row['Average Fees']))
+def display_college_ratings():
+    # Read data from the CSV file
+    data = pd.read_csv("datasets/colleges.csv")
+    
+    # Get unique college names
+    college_names = data["College Name"].unique()
+    
+    # Create a new window to display college ratings
+    ratings_window = tk.Toplevel(root)
+    ratings_window.title("College Ratings")
+    ratings_window.geometry("1100x900")
+    center_window(ratings_window)
+    
+    # Create a treeview to display ratings
+    tree = ttk.Treeview(ratings_window)
+    tree["columns"] = ("Established Year", "Average Fees", "Rating")
+
+    # Define column headings
+    tree.heading("#0", text="College Name")
+    tree.heading("Established Year", text="Established Year", anchor="center")  # Center the column
+    tree.heading("Average Fees", text="Average Fees", anchor="center")  # Center the column
+    tree.heading("Rating", text="Rating", anchor="center")  # Center the column
+
+    # Insert data into the treeview
+    for college in college_names:
+        college_data = data[data["College Name"] == college].iloc[0]
+        established_year = college_data["Established Year"]
+        average_fees = college_data["Average Fees"]
+        total_student_enrollments = college_data["Total Student Enrollments"]
+        total_faculty = college_data["Total Faculty"]
+        rating = calculate_rating(established_year=established_year, total_student_enrollments=total_student_enrollments, total_faculty=total_faculty, average_fees=average_fees)
+        tree.insert("", "end", text=college, values=(established_year, average_fees, rating))
+
+    # Pack the treeview
+    tree.pack(expand=True, fill="both")
+
+def display_ratings_window():
+    # Read the college data from CSV
+    try:
+        colleges_df = pd.read_csv("datasets/colleges.csv")
+    except FileNotFoundError:
+        messagebox.showerror("Error", "Colleges dataset not found.")
+        return
+
+    # Create a new dataframe to store college ratings
+    ratings_df = colleges_df.copy()
+
+    # Calculate rating for each college
+    ratings_df["Rating"] = ratings_df.apply(
+        lambda row: calculate_rating(
+            row["Established Year"],
+            row["Total Student Enrollments"],
+            row["Total Faculty"],
+            row["Average Fees"],
+        ),
+        axis=1,
     )
-    text_widget.insert("end", f"Total Faculty: {result['Total Faculty']}\n")
-    text_widget.insert("end", f"Established Year: {result['Established Year']}\n")
-    text_widget.insert("end", f"Rating: {result['Rating']}\n")
-    text_widget.insert("end", f"University: {result['University']}\n")
 
-    # Append courses with "-"
-    courses = result["Courses"].split(",")
-    formatted_courses = "\n".join([f"- {course.strip()}" for course in courses])
-    text_widget.insert("end", f"Courses: ...\n{formatted_courses}\n")
+    # Create a new window for displaying ratings
+    ratings_window = tk.Toplevel()
+    ratings_window.title("College Ratings")
+    ratings_window.geometry("600x400")
+    center_window(ratings_window)
 
-    text_widget.insert("end", f"Facilities: {result['Facilities']}\n")
-    text_widget.insert("end", f"City: {result['City']}\n")
-    text_widget.insert("end", f"State: {result['State']}\n")
-    text_widget.insert("end", f"Country: {result['Country']}\n")
-    text_widget.insert("end", f"College Type: {result['College Type']}\n")
-    text_widget.insert("end", f"Average Fees: {result['Average Fees']}\n")
+    # Create a Treeview to display ratings
+    tree = ttk.Treeview(ratings_window)
+    tree["columns"] = ("Established Year", "Average Fees", "Rating")
+    tree.heading("#0", text="College Name")
+    tree.heading("Established Year", text="Established Year")
+    tree.heading("Average Fees", text="Average Fees")
+    tree.heading("Rating", text="Rating")
 
-    text_widget.configure(state="disabled")
+    # Center align the columns
+    tree.column("#0", anchor=tk.CENTER)
+    tree.column("Established Year", anchor=tk.CENTER)
+    tree.column("Average Fees", anchor=tk.CENTER)
+    tree.column("Rating", anchor=tk.CENTER)
 
+    # Insert data into Treeview
+    for index, row in ratings_df.iterrows():
+        tree.insert("", index, text=row["College Name"], values=(
+            row["Established Year"],
+            row["Average Fees"],
+            row["Rating"],
+        ))
+
+    tree.pack(expand=True, fill="both")
 
 def exit_application():
     root.destroy()
@@ -864,7 +1036,7 @@ def exit_application():
 def navigate_to_number_options():
     title_label.config(text="Welcome")
     label.config(
-        text="Option 1 - View top x and bottom y rows.\nOption 2 - Export certain rows from dataset.\nOption 3 - Compare data between 2 colleges.\nOption 4 - View a brief info about a college.",
+        text="Option 1 - View top x and bottom y rows.\nOption 2 - Export certain rows from dataset.\nOption 3 - Compare data between 2 colleges.\nOption 4 - View a brief info about a college.\nOption 5 - Display college ratings.",
     )
     enter_button.pack(side=tk.LEFT, padx=10)
     credits_button.pack(side=tk.LEFT, padx=10)
@@ -975,6 +1147,13 @@ try:
             style="Montserrat.TButton",
         )
         option4.pack_forget()
+        option5 = ttk.Button(
+            button_frame,
+            text="5",
+            command=open_college_ratings_window,
+            style="Montserrat.TButton",
+        )
+        option5.pack_forget()
         return_to_main_menu = Button(
             button_frame,
             text="Return to main menu",
