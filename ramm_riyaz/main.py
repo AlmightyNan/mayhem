@@ -1,12 +1,12 @@
 import tkinter as tk
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
 from tkinter import ttk
 
 # Load the data
-data = pd.read_csv("/home/almightynan/Downloads/st.csv", index_col="Rows")
-
+data = pd.read_csv("./dataset.csv")
+#C:\Users\MACH-001\Desktop\Modal Pratical\Project
 # Create the main GUI window
 root = tk.Tk()
 root.title("Startup Data Analysis")
@@ -95,9 +95,11 @@ def display_info():
                     result_text.insert(
                         tk.END, f"Corporate Identification Number: {row['CIN']}\n"
                     )
+                                        
                     result_text.insert(
                         tk.END, f"Paid-up Capital: {row['Paid_up_capital']}\n"
                     )
+                
                     result_text.insert(tk.END, "\n")
             else:
                 result_text.insert(tk.END, "No startups found.\n")
@@ -169,43 +171,9 @@ def display_info():
         result_text.insert(tk.END, "\n".join(startup_names) + "\n\n")
         center_window(names_frame)
 
-    elif selected_option == 4:
-        startup_name_var = tk.StringVar()
-        startup_name_label = tk.Label(root, text="Enter Startup Name:")
-        startup_name_label.pack(padx=20, pady=10)
-
-        startup_name_entry = tk.Entry(root, textvariable=startup_name_var)
-        startup_name_entry.pack(padx=20, pady=10)
-
-        def display_location():
-            startup_name = startup_name_var.get()
-            startup_data = data[
-                data["Name_of_the_startup"]
-                .str.lower()
-                .str.contains(startup_name.lower())
-            ]
-            if not startup_data.empty:
-                location = startup_data["Location_of_company"].values[0]
-                location_text.delete(1.0, tk.END)  # Clear previous content
-                location_text.insert(tk.END, location)
-            else:
-                location_text.delete(1.0, tk.END)
-                location_text.insert(tk.END, "Startup not found!")
-
-        display_button = tk.Button(
-            root, text="Display Location", command=display_location
-        )
-        display_button.pack(pady=10)
-
-        location_text = tk.Text(
-            root, wrap=tk.WORD, height=3, width=40, state="normal", font=("Arial", 14)
-        )
-        location_text.pack(padx=20, pady=20)
-        center_window(root)
-
     elif selected_option == 5:
         startup_name_frame = tk.Toplevel(root)
-        startup_name_frame.title("Know About the Location of the Startup")
+        startup_name_frame.title("Know About the Incubation Center of the Startup")
 
         startup_name_var = tk.StringVar()
         startup_name_label = tk.Label(startup_name_frame, text="Enter Startup Name:")
@@ -240,10 +208,12 @@ def display_info():
                 location_text.insert(tk.END, "Startup not found!")
 
         display_button = tk.Button(
-            startup_name_frame, text="Display Location", command=display_location
+            startup_name_frame, text="Display Incubation Center", command=display_location
         )
         display_button.pack(pady=10)
         center_window(root)
+
+        
 
     elif selected_option == 6:
         # Know About the Location of the Startup
@@ -252,10 +222,20 @@ def display_info():
 
         def display_location():
             startup_name = startup_name_var.get()
-            location = data[data["Name_of_the_startup"] == startup_name][
-                "Location_of_company"
-            ].values[0]
-            result_label.config(text=f"The Location of {startup_name} is in {location}")
+            startup_data = data[
+                data["Name_of_the_startup"]
+                .str.lower()
+                .str.contains(startup_name.lower())
+            ]
+            if not startup_data.empty:
+                location = startup_data["Location_of_company"].values[0]
+                if len(location) > 0:
+                    result_label.config(text=f"The Location of {startup_name} is in {startup_data['Location_of_company'].values[0]}")
+                else:
+                    result_label.config(text="Location data not available")
+            else:
+                result_label.config(text="Startup not found!")
+
 
         startup_name_var = tk.StringVar()
         startup_name_label = tk.Label(location_frame, text="Enter Startup Name:")
@@ -277,10 +257,16 @@ def display_info():
 
         def display_sector():
             startup_name = startup_name_var.get()
-            sector = data[data["Name_of_the_startup"] == startup_name]["Sector"].values[
-                0
+            startup_data = data[
+                data["Name_of_the_startup"]
+                .str.lower()
+                .str.contains(startup_name.lower())
             ]
-            result_label.config(text=f"The Sector of {startup_name} is {sector}")
+            if not startup_data.empty:
+                sector = startup_data["Sector"].values[0]
+                result_label.config(text=f"The Sector of {startup_name} is {sector}")
+            else:
+                result_label.config(text="Startup not found!")
 
         startup_name_var = tk.StringVar()
         startup_name_label = tk.Label(sector_frame, text="Enter Startup Name:")
@@ -302,7 +288,10 @@ def display_info():
 
         def display_profile():
             startup_name = startup_name_var.get()
-            profile = data[data["Name_of_the_startup"] == startup_name][
+            profile = data[data["Name_of_the_startup"]
+                .str.lower()
+                .str.contains(startup_name.lower())
+            ][
                 "Company_profile"
             ].values[0]
             result_label.config(text=f"The Profile of {startup_name} is {profile}")
@@ -316,7 +305,14 @@ def display_info():
             profile_frame, text="Display Profile", command=display_profile
         )
         display_button.pack(pady=10)
-        result_label = tk.Label(profile_frame, text="")
+        result_label = tk.Label(
+            profile_frame, 
+            text="", 
+            width=60,  # Adjust width as needed
+            wraplength=500,  # Adjust wrap length as needed
+            anchor="center"  # Center align the text
+        )
+        result_label.pack(padx=20, pady=20)
         result_label.pack(padx=20, pady=20)
         center_window(profile_frame)
 
@@ -327,7 +323,10 @@ def display_info():
 
         def display_cin():
             startup_name = startup_name_var.get()
-            cin = data[data["Name_of_the_startup"] == startup_name]["CIN"].values[0]
+            cin = data[data["Name_of_the_startup"]
+                .str.lower()
+                .str.contains(startup_name.lower())
+            ]["CIN"].values[0]
             result_label.config(
                 text=f"The Corporate Identification Number of {startup_name} is {cin}"
             )
@@ -350,7 +349,10 @@ def display_info():
 
         def display_paid_up_capital():
             startup_name = startup_name_var.get()
-            capital = data[data["Name_of_the_startup"] == startup_name][
+            capital = data[data["Name_of_the_startup"]
+                .str.lower()
+                .str.contains(startup_name.lower())
+            ][
                 "Paid_up_capital"
             ].values[0]
             result_label.config(
@@ -384,7 +386,10 @@ def display_info():
 
         def filter_by_location():
             selected_location = location_var.get()
-            filtered_data = data[data["Location_of_company"] == selected_location]
+            filtered_data = data[data["Location_of_company"]
+                .str.lower()
+                .str.contains(selected_location.lower())
+            ]
             result_text.delete("1.0", tk.END)  # Clear previous content
 
             if not filtered_data.empty:
@@ -532,7 +537,7 @@ def display_info():
                 "Sector": "Sector",
                 "Company_profile": "Company Profile",
                 "Year": "Starting Year",
-                "CIN": "Corporate Identification Number",
+                "CIN": "CIN",
                 "Paid_up_capital": "Paid-up Capital",
             }
 
@@ -562,7 +567,7 @@ def display_info():
             show="headings",
             height=35,
         )
-        result_tree.column("#1", width=700)  # Width of the first column (Column)
+        result_tree.column("#1", width=150)  # Width of the first column (Column)
         result_tree.column("#2", width=700)  # Width of the second column (Value)
 
         result_tree.heading("#1", text="Columns")
@@ -639,7 +644,7 @@ def display_info():
         display_button.pack(pady=10)
         center_window(capital_frame)
 
-    elif selected_option == 15:
+    elif selected_option == 15:   # Error. Change the code
         # Compare the Paid-up Capital of Startups with the Same Incubation Center
         compare_frame = tk.Toplevel(root)
         compare_frame.title(
@@ -650,9 +655,9 @@ def display_info():
             incubation_center = incubation_var.get()
             comparison_data = data[data["Incubation_Center"] == incubation_center]
 
-            # Convert 'Paid_up_capital' to numeric values (remove commas and convert to integers)
+            # Convert 'Paid_up_capital' to strings first, then remove commas
             comparison_data["Paid_up_capital"] = (
-                comparison_data["Paid_up_capital"].str.replace(",", "").astype(int)
+                comparison_data["Paid_up_capital"].astype(str).str.replace(",", "").astype(float)
             )
 
             if not comparison_data.empty:
@@ -753,7 +758,3 @@ analyze_button.pack(pady=20)
 
 root.mainloop()
 
-"""
-@authors - AlmightyNan <almightynan@apollo-bot.xyz>
-@website - https://almightynan.cc
-"""
