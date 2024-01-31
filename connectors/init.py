@@ -1,42 +1,51 @@
-import mysql.connector as msc
+from connectors.config import connection
 from src.utils import CustomLogger as logger
+import mysql.connector as msc 
 
 logger = logger()
 
 class Initialize:
-    """Queries sent to the database on startup"""
-
-    def db(db):
+    @staticmethod
+    def db(connection):
         logger.log(
             "SUCCESS", "Handshake success, sending queries to create database..."
         )
-        # Create a database named 'library' if it doesn't exist
-        db.execute("CREATE DATABASE IF NOT EXISTS library;")
-        # Switch to the 'library' database for further operations
-        db.execute("USE library;")
+        cursor = connection.cursor()
+        cursor.execute("CREATE DATABASE IF NOT EXISTS db;")
+        cursor.execute("USE db;")
+        cursor.close()
 
-    def movies(db):
-        logger.log("DEBUG", "Creating table 'movies'...")
+    @staticmethod
+    def colleges(connection):
+        logger.log("DEBUG", "Creating table 'colleges'...")
         try:
-            # Create the 'movies' table if it doesn't exist, with specific columns and data types
-            db.execute(
+            cursor = connection.cursor()
+            cursor.execute(
                 """
-                CREATE TABLE IF NOT EXISTS movies (
-                    id INT(5) PRIMARY KEY,
-                    title VARCHAR(100) UNIQUE NOT NULL,
-                    overview TEXT,
-                    original_language VARCHAR(10) DEFAULT 'Unknown'
-                    vote_count int(5) DEFAULT 1,
-                    vote_average int(5) DEFAULT 1 
+                CREATE TABLE IF NOT EXISTS colleges (
+                    College_Name MEDIUMTEXT,
+                    Genders_Accepted MEDIUMTEXT,
+                    Campus_Size MEDIUMTEXT,
+                    Total_Student_Enrollments int(100),
+                    Total_Faculty int(100),
+                    Established_Year int(40),
+                    Rating float(20, 10),
+                    University MEDIUMTEXT,
+                    Courses MEDIUMTEXT,
+                    Facilities MEDIUMTEXT,
+                    City MEDIUMTEXT,
+                    State MEDIUMTEXT,
+                    Country MEDIUMTEXT,
+                    College_Type MEDIUMTEXT,
+                    Average_Fees float(10, 10)
                 );
                 """
             )
             logger.log(
-                "SUCCESS", "Created table 'movies', switching to the next statement..."
+                "SUCCESS", "Created table 'colleges', switching to the next statement..."
             )
-            # Commit the changes to the database after the successful table creation
-            db.execute("COMMIT;")
+            cursor.execute("COMMIT;")
+            cursor.close()
         except msc.Error as err:
-            # If the 'movies' table already exists, skip the table creation
             if err.errno == msc.errorcode.ER_TABLE_EXISTS_ERROR:
-                logger.log("WARNING", "Existing table 'movies' found, skipping...")
+                logger.log("WARNING", "Existing table 'colleges' found, skipping...")

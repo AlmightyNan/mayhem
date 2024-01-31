@@ -1,25 +1,34 @@
 import mysql.connector as msc
 import numpy as np
 import connectors.config as config
-from prettytable import PrettyTable
 from src.utils import CustomLogger as logger
 from connectors.init import Initialize
 from connectors.insert import Insert
+from connectors.config import connection
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 from tkinter.ttk import Button, Combobox
 import threading
 from tkinter.simpledialog import askinteger
 import pandas as pd
-from prettytable import PrettyTable
 from tkinter import StringVar
 from tkinter import ttk, font
 import matplotlib.pyplot as plt
 from tkinter import filedialog
-from sqlalchemy import create_engine
-import math
+
+animation_running = True
+
 
 def center_window(window):
+    """
+    Centers the given window on the screen.
+
+    Args:
+        window: The window to be centered.
+
+    Returns:
+        None
+    """
     window.update_idletasks()  # Make sure window size is updated
     width = window.winfo_width()
     height = window.winfo_height()
@@ -34,9 +43,16 @@ def center_window(window):
 
 
 def show_credits():
+    """
+    Function to display credits with team lead and contributors.
+    No parameters.
+    No return types.
+    """
     title_label.config(text="Credits", font=("Montserrat", 16, "bold"))
     label.config(
-        text="<placeholder>",
+        text=""" Shree Nandha A B                  -   Team Lead
+      Janardan M                              -   Contributor #1
+      Naveen Sabari Rajhan R S    -   Contributor #2""",
         font=("Montserrat", 12),
     )
     enter_button.pack_forget()
@@ -49,6 +65,9 @@ def show_credits():
 
 
 def go_back_to_main_menu():
+    """
+    Function to go back to the main menu and reset the window layout.
+    """
     center_window(root)
     title_label.config(text="Welcome", font=("Montserrat", 16, "bold"))
     label.config(
@@ -72,6 +91,9 @@ def go_back_to_main_menu():
 
 
 def show_head_tail():
+    """
+    Function to display the head and tail of a dataset and update the display based on column selection.
+    """
     center_window(root)
     num_rows_head = askinteger(
         "Input", "Enter the number of rows to select from top:", parent=root
@@ -101,6 +123,11 @@ def show_head_tail():
             )
 
         def update_display():
+            """
+            Update the display with the selected column data.
+
+            This function does not take any parameters and does not return any value.
+            """
             selected_col = selected_column.get()
 
             top_text = top_rows[selected_col].to_string(index=True)
@@ -113,7 +140,6 @@ def show_head_tail():
                 f"Top {num_rows_head} Rows:\n{top_text}\n\nBottom {num_rows_tail} Rows:\n{bottom_text}",
             )
             result_text.config(state=tk.DISABLED)  # Disable the Text widget again
-
         result_window = tk.Toplevel(root)
         result_window.title("Head and Tail")
         result_window.geometry("800x600")
@@ -136,24 +162,24 @@ def show_head_tail():
 
         update_button = ttk.Button(result_window, text="Update", command=update_display)
         update_button.pack(pady=5)
-
         update_display()  # Initial display
 
 
-# Rest of your code...
-
-
-def on_exit():
-    root.destroy()
-
-
-animation_running = True
-
-
 def on_enter_button_click():
+    """
+    This function handles the click event for the "Enter" button. It centers the window,
+    starts an animation thread, and initiates the database initialization and data insertion
+    processes in separate threads. It also removes the "Credits" button when the "Enter"
+    button is clicked.
+    """
     center_window(root)
 
     def update_text_animation(dot_count):
+        """
+        Update the text animation on the label based on the dot_count.
+        If animation_running is True, it updates the label text and disables the buttons.
+        If animation_running is False, it enables the buttons.
+        """
         global animation_running
         if animation_running:
             if dot_count == 0:
@@ -175,8 +201,15 @@ def on_enter_button_click():
             exit_button.config(state=tk.NORMAL)
 
     def finish_inserting_data():
+        """
+        Finish inserting data and update the UI accordingly.
+        """
         global animation_running
         animation_running = False
+        '''initialize_and_insert_data'''
+        '''cursor = connection.cursor()
+        Insert.db(connection)
+        Insert.from_csv(connection, 'D:/nand3v/datasets/colleges.csv')'''
         title_label.config(text="Database Initialization Complete")
         label.config(
             text="Please utilize the provided buttons to commence the process.",
@@ -188,9 +221,11 @@ def on_enter_button_click():
         exit_button.config(state=tk.NORMAL)
 
     def initialize_and_insert_data():
-        # connection = mydb.cursor()
-        # Initialize.db(connection)
-        # Insert.from_csv(connection, "./datasets/movies.csv")
+        """
+        Function to initialize the database and insert data from a CSV file.
+        """
+        Insert.db(connection)
+        Insert.from_csv(connection, "./datasets/colleges.csv")
         finish_inserting_data()
 
     # Start the animation thread
@@ -206,11 +241,32 @@ def on_enter_button_click():
 
 
 def show_csv_data():
+    """
+    Function to display CSV data in a GUI window.
+
+    This function sets up a GUI window to display data from a CSV file. It
+    includes functions to load data for each page, show a specific page, and
+    set up the Treeview widget to display the data. It also includes buttons
+    for navigating between pages of data.
+
+    No parameters or return types are explicitly mentioned in the function
+    definition, but the function relies on external variables and libraries
+    such as 'root', 'pd', and 'tk'.
+    """
     center_window(root)
     csv_file_path = "datasets/colleges.csv"  # Update with your actual CSV file path
     page_size = 50  # Number of rows per page
 
     def load_data(page_num):
+        """
+        Load data from a CSV file based on the given page number.
+
+        Args:
+            page_num (int): The page number to load.
+
+        Returns:
+            pandas.DataFrame: The data for the specified page.
+        """
         center_window(root)
         start_idx = page_num * page_size
         end_idx = start_idx + page_size
@@ -221,6 +277,15 @@ def show_csv_data():
         return page_data
 
     def show_page(page_num):
+        """
+        Show the specified page by updating the current_page variable and loading data into the Treeview.
+
+        Parameters:
+        page_num (int): The page number to be shown.
+
+        Returns:
+        None
+        """
         center_window(root)
         nonlocal current_page  # Use nonlocal to update the outer current_page variable
         current_page = page_num  # Update the current_page variable
@@ -306,6 +371,17 @@ def show_csv_data():
 
 
 def search_and_compare():
+    """
+    Perform a search and comparison operation.
+
+    This function takes no parameters and does not return any value.
+    It retrieves the search query from the search entry field, removes any leading
+    or trailing whitespace, and then searches for the most related college name in
+    the 'data' DataFrame. If a related college name is found, it retrieves the
+    college name and compares it with the selected college using the
+    'compare_colleges' function. If no search query is provided, it displays a
+    message box with an error message.
+    """
     search_query = search_entry.get().strip()
     if search_query:
         # Find the most related college name
@@ -342,6 +418,16 @@ def search_dataset():
 
 
 def compare_colleges(college1, college2):
+    """
+    Compare two colleges based on various data points and display the comparison through bar graphs.
+
+    Args:
+    college1: A string representing the name of the first college.
+    college2: A string representing the name of the second college.
+
+    Returns:
+    None
+    """
     try:
         # Load the data
         data = pd.read_csv("datasets/colleges.csv")
@@ -470,6 +556,15 @@ def compare_colleges(college1, college2):
 
 
 def parse_campus_size(value):
+    """
+    Parse the campus size from the given value.
+
+    Args:
+        value (str): The input value to parse.
+
+    Returns:
+        float: The parsed campus size, or 0.0 if the value is not in the expected format.
+    """
     try:
         # Handle cases where value is not in the expected format
         if isinstance(value, str) and "Acre" in value:
@@ -483,18 +578,37 @@ def parse_campus_size(value):
 
 
 def export_csv_data():
+    """
+    This function is responsible for exporting CSV data. It includes nested functions to
+    load data, show a page, navigate to the previous or next page, and save changes to
+    the data. The function initializes a GUI window for editing CSV data and interacting
+    with the data through a Treeview widget. It also includes functionality for saving
+    the data with a custom file extension and displaying the data in a specific format.
+    """
     global data  # Make sure data is a global variable accessible in this function
     data = pd.read_csv(
-        "/home/almightynan/Desktop/mayhem/mayhem/datasets/colleges.csv"
-    )  # Load your CSV data here
+        "./datasets/colleges.csv",
+    )
 
     def load_data(page_num):
+        """
+        Load data from the specified page number.
+
+        :param page_num: The page number to load data from
+        :return: The data loaded from the specified page number
+        """
         start_idx = page_num * page_size
         end_idx = start_idx + page_size
 
         return data.iloc[start_idx:end_idx]
 
     def show_page(page_num):
+        """
+        Updates the current page number and refreshes the Treeview with new page data.
+
+        :param page_num: int - The page number to display
+        :return: None
+        """
         nonlocal current_page  # Use nonlocal to update the outer current_page variable
         current_page = page_num
 
@@ -505,15 +619,26 @@ def export_csv_data():
             tree.insert("", "end", values=row.tolist())
 
     def prev_page():
+        """
+        Function to go to the previous page if the current page is greater than 0.
+        No parameters and no return value.
+        """
         if current_page > 0:
             show_page(current_page - 1)
 
     def next_page():
+        """
+        This function calculates the last page based on the length of the data and the page size.
+        If the current page is less than the last page, it shows the next page.
+        """
         last_page = (len(data) - 1) // page_size
         if current_page < last_page:
             show_page(current_page + 1)
 
     def save_changes():
+        """
+        Save the changes made in the treeview to a file with user-selected file extension.
+        """
         updated_data = []
         for item in tree.get_children():
             values = tree.item(item, "values")
@@ -533,6 +658,21 @@ def export_csv_data():
         file_extension_combo.pack()
 
         def save_with_extension():
+            """
+            Saves the updated data to a file with the specified extension.
+
+            This function prompts the user to select a file location to save the updated data
+            based on the chosen file extension. If the user selects a valid location, it saves
+            the updated data to the specified file in the chosen format. If the user selects an
+            invalid extension, an error message is displayed. The function does not return
+            anything.
+
+            Parameters:
+            - None
+
+            Returns:
+            - None
+            """
             user_extension = file_extension_combo.get().lower()
 
             if user_extension not in supported_extensions:
@@ -627,12 +767,24 @@ def export_csv_data():
         style.configure("Montserrat.TButton", font=("Montserrat", 12))
 
     def finish_editing(event, item, row, col):
+        """
+        A function to finish editing a tree item with the new value from the entry.
+
+        :param event: The event triggering the editing finish.
+        :param item: The item in the tree being edited.
+        :param row: The row of the item in the tree.
+        :param col: The column of the item being edited.
+        :return: None
+        """
         new_value = entry_var.get()
         tree.item(item, values=("", new_value, ""))
         entry.place_forget()
         entry.unbind("<FocusOut>")
 
     def save_changes():
+        """
+        Function to save the changes made in the treeview to a file with the user-selected file extension.
+        """
         updated_data = []
         for item in tree.get_children():
             values = tree.item(item, "values")
@@ -645,6 +797,13 @@ def export_csv_data():
         supported_extensions = ["csv", "xlsx", "json", "html"]
 
         def save_with_extension():
+            """
+            Saves the updated data to a file with the specified user_extension.
+            Prompts the user to select a file location and saves the updated data in the
+            specified format (csv, xlsx, json, or html). Shows an error message if the
+            user selects an unsupported file extension, and shows a success message after
+            saving the file. Also hides the extension_button after the save operation.
+            """
             user_extension = file_extension_combo.get().lower()
 
             if user_extension not in supported_extensions:
@@ -672,6 +831,9 @@ def export_csv_data():
                 extension_button.pack_forget()
 
         def open_extension_selector():
+            """
+            Opens a new window to select a file extension using a Combobox and a save button.
+            """
             extension_window = tk.Toplevel(root)
             extension_window.title("Select File Extension")
 
@@ -784,6 +946,9 @@ def export_csv_data():
 
 def compare_colleges_window():
     def compare():
+        """
+        This function compares two colleges based on the values of college1_var and college2_var.
+        """
         college1 = college1_var.get().strip()
         college2 = college2_var.get().strip()
 
@@ -814,6 +979,9 @@ def compare_colleges_window():
 
 
 def search_college():
+    """
+    Function to search for a college in the dataset based on a case-insensitive search for college names.
+    """
     college_name = simpledialog.askstring("Search College", "Enter College Name:")
     if college_name:
         # Use a case-insensitive search for college names
@@ -827,23 +995,81 @@ def search_college():
             messagebox.showinfo("No Results", "No matching data found.")
 
 
-def calculate_rating(established_year, total_student_enrollments, total_faculty, average_fees):
+def display_results_window(result):
+    """
+    Display the search results in a new window.
+
+    Args:
+        result (dict): A dictionary containing the search results for a college.
+
+    Returns:
+        None
+    """
+    results_window = tk.Toplevel()
+    results_window.title("Search Results")
+    results_window.geometry("1100x900")
+    center_window(results_window)
+    text_widget = tk.Text(results_window, font=("Montserrat", 14))
+    text_widget.pack(fill="both", expand=True)
+
+    text_widget.tag_configure("bold", font=("Montserrat", 18, "bold"))
+
+    text_widget.insert("end", f"College Name: {result['College Name']}\n", "bold")
+    text_widget.insert("end", f"Genders Accepted: {result['Genders Accepted']}\n")
+    text_widget.insert("end", f"Campus Size: {result['Campus Size']}\n")
+    text_widget.insert(
+        "end", f"Total Student Enrollments: {result['Total Student Enrollments']}\n"
+    )
+    text_widget.insert("end", f"Total Faculty: {result['Total Faculty']}\n")
+    text_widget.insert("end", f"Established Year: {result['Established Year']}\n")
+    text_widget.insert("end", f"Rating: {result['Rating']}\n")
+    text_widget.insert("end", f"University: {result['University']}\n")
+    text_widget.insert("end", f"City: {result['City']}\n")
+    text_widget.insert("end", f"State: {result['State']}\n")
+    text_widget.insert("end", f"Country: {result['Country']}\n")
+    text_widget.insert("end", f"Average Fees: {result['Average Fees']}\n")
+    # Append courses with "-"
+    courses = result["Courses"].split(",")
+    formatted_courses = "\n".join([f"- {course.strip()}" for course in courses])
+    text_widget.insert("end", f"Courses: ...\n{formatted_courses}\n")
+
+    text_widget.insert("end", f"Facilities: {result['Facilities']}\n")
+    text_widget.insert("end", f"College Type: {result['College Type']}\n")
+    text_widget.configure(state="disabled")
+
+
+def calculate_rating(
+    established_year, total_student_enrollments, total_faculty, average_fees
+):
+    """
+    Calculate the rating of a college based on various factors such as established year,
+    total student enrollments, total faculty, and average fees. Parameters:
+    - established_year: the year the college was established
+    - total_student_enrollments: the total number of students enrolled in the college
+    - total_faculty: the total number of faculty in the college
+    - average_fees: the average fees of the college
+    Returns a string representing the calculated rating in the format 'x.xx/5'
+    """
     # Convert established_year to integer if it's not NaN and not 'Established Year'
-    if established_year != 'Established Year' and not pd.isnull(established_year):
+    if established_year != "Established Year" and not pd.isnull(established_year):
         established_year = int(established_year)
     else:
         established_year = 0
-    
+
     # Convert other values to integers or floats if they are not NaN
     try:
         total_faculty = int(total_faculty) if not pd.isnull(total_faculty) else 0
-        total_student_enrollments = int(total_student_enrollments) if not pd.isnull(total_student_enrollments) else 0
+        total_student_enrollments = (
+            int(total_student_enrollments)
+            if not pd.isnull(total_student_enrollments)
+            else 0
+        )
         average_fees = float(average_fees) if not pd.isnull(average_fees) else 0
     except ValueError:
         total_faculty = 0
         total_student_enrollments = 0
         average_fees = 0
-    
+
     # Weightage factors for each criterion
     established_year_weight = 0.2
     student_faculty_ratio_weight = 0.3
@@ -856,112 +1082,183 @@ def calculate_rating(established_year, total_student_enrollments, total_faculty,
     # Calculate rating based on weighted factors
     try:
         rating = (
-            (adjusted_established_year * established_year_weight) +
-            ((total_faculty / total_student_enrollments) * student_faculty_ratio_weight) +
-            ((1 / average_fees) * average_fees_weight) +
-            (campus_size_weight / np.sqrt(total_student_enrollments))  # Adjust for campus size
+            (adjusted_established_year * established_year_weight)
+            + (
+                (total_faculty / total_student_enrollments)
+                * student_faculty_ratio_weight
+            )
+            + ((1 / average_fees) * average_fees_weight)
+            + (
+                campus_size_weight / np.sqrt(total_student_enrollments)
+            )  # Adjust for campus size
         )
     except ZeroDivisionError:
         rating = 0  # Handle division by zero
-    
+
     # Scale rating between 0 and 5
     scaled_rating = min(max(rating / 5, 0), 5)
-    
+
     return f"{scaled_rating:.2f}/5"
 
+
 def open_college_ratings_window():
-    # Create a new window for displaying college ratings
+    """
+    Create a new window for displaying college ratings
+    """
     ratings_window = tk.Toplevel(root)
     ratings_window.title("College Ratings")
-    
+
     # Create a DataFrame to hold the data
     data = pd.read_csv("./datasets/colleges.csv")
-    
+
     # Calculate ratings for each college
-    data['Rating'] = data.apply(lambda row: calculate_rating(row['Established Year'], row['Total Student Enrollments'], row['Total Faculty'], row['Average Fees']), axis=1)
-    
+    data["Rating"] = data.apply(
+        lambda row: calculate_rating(
+            row["Established Year"],
+            row["Total Student Enrollments"],
+            row["Total Faculty"],
+            row["Average Fees"],
+        ),
+        axis=1,
+    )
+
     # Default sorting by rating in ascending order
-    data = data.sort_values(by='Rating', ascending=True)
-    
+    data = data.sort_values(by="Rating", ascending=False)
+
     # Create a frame for displaying the treeview and sorting options
     frame = tk.Frame(ratings_window)
-    frame.pack(padx=10, pady=10, fill='both', expand=True)
-    
+    frame.pack(padx=10, pady=10, fill="both", expand=True)
+
     # Create a treeview to display the college data
-    tree = ttk.Treeview(frame, columns=['College Name', 'Rating', 'Established Year', 'Average Fees'], show='headings')
-    tree.heading('College Name', text='College Name')
-    tree.heading('Rating', text='Rating')
-    tree.heading('Established Year', text='Established Year')
-    tree.heading('Average Fees', text='Average Fees')
-    
+    tree = ttk.Treeview(
+        frame,
+        columns=["College Name", "Rating", "Established Year", "Average Fees"],
+        show="headings",
+    )
+    tree.heading("College Name", text="College Name")
+    tree.heading("Rating", text="Rating")
+    tree.heading("Established Year", text="Established Year")
+    tree.heading("Average Fees", text="Average Fees")
+
     # Populate the treeview with data
     for index, row in data.iterrows():
-        tree.insert('', 'end', values=(row['College Name'], row['Rating'], row['Established Year'], row['Average Fees']))
-    
-    tree.pack(fill='both', expand=True)
-    
+        tree.insert(
+            "",
+            "end",
+            values=(
+                row["College Name"],
+                row["Rating"],
+                row["Established Year"],
+                row["Average Fees"],
+            ),
+        )
+
+    tree.pack(fill="both", expand=True)
+
     # Add padding between the treeview and the dropdown menu
     padding = tk.Label(frame, text="", pady=10)
     padding.pack()
-    
+
     # Function to handle sorting by rating
     def sort_by_rating(order):
-        data_sorted = data.sort_values(by='Rating', ascending=(order == 'asc'))
+        """
+        Sorts the data by rating in either ascending or descending order.
+
+        Parameters:
+            order (str): The order in which to sort the data, either 'asc' for ascending or 'desc' for descending.
+
+        Returns:
+            None
+        """
+        data_sorted = data.sort_values(by="Rating", ascending=(order == "asc"))
         update_treeview(tree, data_sorted)
-    
+
     # Create a StringVar to track the selected sorting option
     sort_option = tk.StringVar(ratings_window)
-    
+
     # Function to handle selection in the dropdown menu
     def on_sort_option_change(*args):
+        """
+        This function handles the change event for the sort option. It takes in
+        *args as parameters and does not return any value.
+        """
         selected_option = sort_option.get()
-        if selected_option != 'Sort By':
-            if selected_option == 'High to Low':
-                sort_by_rating('desc')
-            elif selected_option == 'Low to High':
-                sort_by_rating('asc')
-    
+        if selected_option != "Sort By":
+            if selected_option == "High to Low":
+                sort_by_rating("desc")
+            elif selected_option == "Low to High":
+                sort_by_rating("asc")
+
     # Link the dropdown variable to the callback function
-    sort_option.trace('w', on_sort_option_change)
-    
+    sort_option.trace("w", on_sort_option_change)
+
     # Create the dropdown menu
-    sort_options = ['Sort By', 'High to Low', 'Low to High']
+    sort_options = ["Sort By", "High to Low", "Low to High"]
     sort_option.set(sort_options[0])  # Set the default option to "Sort By"
     sort_menu = tk.OptionMenu(frame, sort_option, *sort_options)
     sort_menu.pack(pady=(0, 10))
-    
+
     # Display the ratings window
     ratings_window.mainloop()
 
+
 def update_treeview(tree, data):
+    """
+    Update the given treeview with the provided data.
+
+    Args:
+        tree: The treeview to be updated.
+        data: The data to populate the treeview with.
+
+    Returns:
+        None
+    """
     # Clear existing items
     for item in tree.get_children():
         tree.delete(item)
-    
+
     # Populate the treeview with sorted data
     for index, row in data.iterrows():
-        tree.insert('', 'end', values=(row['College Name'], row['Rating'], row['Established Year'], row['Average Fees']))
+        tree.insert(
+            "",
+            "end",
+            values=(
+                row["College Name"],
+                row["Rating"],
+                row["Established Year"],
+                row["Average Fees"],
+            ),
+        )
+
+
 def display_college_ratings():
+    """
+    Display college ratings by reading data from a CSV file and creating a new window to show the ratings using a treeview.
+    """
     # Read data from the CSV file
     data = pd.read_csv("datasets/colleges.csv")
-    
+
     # Get unique college names
     college_names = data["College Name"].unique()
-    
+
     # Create a new window to display college ratings
     ratings_window = tk.Toplevel(root)
     ratings_window.title("College Ratings")
     ratings_window.geometry("1100x900")
     center_window(ratings_window)
-    
+
     # Create a treeview to display ratings
     tree = ttk.Treeview(ratings_window)
     tree["columns"] = ("Established Year", "Average Fees", "Rating")
 
     # Define column headings
     tree.heading("#0", text="College Name")
-    tree.heading("Established Year", text="Established Year", anchor="center")  # Center the column
-    tree.heading("Average Fees", text="Average Fees", anchor="center")  # Center the column
+    tree.heading(
+        "Established Year", text="Established Year", anchor="center"
+    )  # Center the column
+    tree.heading(
+        "Average Fees", text="Average Fees", anchor="center"
+    )  # Center the column
     tree.heading("Rating", text="Rating", anchor="center")  # Center the column
 
     # Insert data into the treeview
@@ -971,13 +1268,26 @@ def display_college_ratings():
         average_fees = college_data["Average Fees"]
         total_student_enrollments = college_data["Total Student Enrollments"]
         total_faculty = college_data["Total Faculty"]
-        rating = calculate_rating(established_year=established_year, total_student_enrollments=total_student_enrollments, total_faculty=total_faculty, average_fees=average_fees)
-        tree.insert("", "end", text=college, values=(established_year, average_fees, rating))
+        rating = calculate_rating(
+            established_year=established_year,
+            total_student_enrollments=total_student_enrollments,
+            total_faculty=total_faculty,
+            average_fees=average_fees,
+        )
+        tree.insert(
+            "", "end", text=college, values=(established_year, average_fees, rating)
+        )
 
     # Pack the treeview
     tree.pack(expand=True, fill="both")
 
+
 def display_ratings_window():
+    """
+    Display a ratings window for colleges based on data from a CSV file.
+    Read the college data from CSV, calculate ratings for each college, and
+    display the ratings in a new window using Treeview.
+    """
     # Read the college data from CSV
     try:
         colleges_df = pd.read_csv("datasets/colleges.csv")
@@ -1021,19 +1331,35 @@ def display_ratings_window():
 
     # Insert data into Treeview
     for index, row in ratings_df.iterrows():
-        tree.insert("", index, text=row["College Name"], values=(
-            row["Established Year"],
-            row["Average Fees"],
-            row["Rating"],
-        ))
+        tree.insert(
+            "",
+            index,
+            text=row["College Name"],
+            values=(
+                row["Established Year"],
+                row["Average Fees"],
+                row["Rating"],
+            ),
+        )
 
     tree.pack(expand=True, fill="both")
 
+
 def exit_application():
+    """
+    Close the application window and drop the database before exit.
+    """
+    cursor = connection.cursor()
+    cursor.execute("DROP DATABASE db;")
+    cursor.execue("COMMIT;")
     root.destroy()
 
 
 def navigate_to_number_options():
+    """
+    Navigates to the number options and configures the title label and label text.
+    Packs the enter button, credits button, exit button, and view all data button.
+    """
     title_label.config(text="Welcome")
     label.config(
         text="Option 1 - View top x and bottom y rows.\nOption 2 - Export certain rows from dataset.\nOption 3 - Compare data between 2 colleges.\nOption 4 - View a brief info about a college.\nOption 5 - Display college ratings.",
@@ -1062,7 +1388,7 @@ try:
         # Open tkinter box after database operations are completed
         root = tk.Tk()
         root.title(config.projectName)
-        root.geometry("700x500")
+        root.geometry("1100x800")
         center_window(root)
         root.config(bg=config.accentColor)
 
@@ -1096,7 +1422,7 @@ try:
         enter_button.pack(side=tk.LEFT, padx=10)
 
         exit_button = Button(
-            button_frame, text="Exit", command=on_exit, style="Montserrat.TButton"
+            button_frame, text="Exit", command=exit_application, style="Montserrat.TButton"
         )
         exit_button.pack(side=tk.RIGHT, padx=10)
 

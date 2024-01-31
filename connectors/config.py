@@ -1,14 +1,20 @@
-""" Configurations to esablish mysql connection """
-""" host        -   <string;           | <...> >
-    user        -   <string;           | <...> >
-    password    -   <string;           | <...> >
-    accentColor -   <colorResolvable;  | <...> >
-    projectName -   <string;           | <...> >
-"""
+import mysql.connector as msc
+from src.utils import CustomLogger as logger
 
+# Initialize the logger
+logger = logger()
+
+# Configuration to establish MySQL connection
 host = "localhost"
-user = "nan"
-password = "Almightynan012@3"
+user = "root"
+password = ""
 accentColor = "black"
 fontColor = "white"
 projectName = "project mayhem"
+
+# Initialize database connection
+connection = msc.connect(
+    host=host,
+    user=user,
+    password=password
+)
